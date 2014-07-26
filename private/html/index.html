@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Online Game 1</title>
+	<link rel="stylesheet" type="text/css" href="/style/index.css">
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="/js/jquery-2.1.1.min.js"></script>
+	<script>
+	var poiDataView = function(poiData) {
+		var poiDataContainer = document.createElement('div');
+		var poiDataTextSpan = document.createElement('span');
+	    poiDataContainer.id = 'poi_data_container';
+		
+		poiDataTextSpan.textContent = poiData.poiName;
+		
+		if(poiData.soil > poiData.stone && poiData.soil > poiData.wilderness) {
+			poiDataTextSpan.textContent += ", a fertile plain.";
+		}
+		else if(poiData.stone > poiData.soil && poiData.stone > poiData.wilderness) {
+			poiDataTextSpan.textContent += ", a land of craggy mountains.";
+		}
+		else {
+			poiDataTextSpan.textContent += ", a verdant, uncharted expanse.";
+		}
+		
+		poiDataContainer.appendChild(poiDataTextSpan);
+		
+		return poiDataContainer;
+	}
+	
+	var removeAllChildren = function(node) {
+		while(node.lastChild) {
+			node.removeChild(node.lastChild);
+		}
+	}
+	
+	$(function() {
+	  var socket = io('localhost:4010');
+	  
+	  socket.on('POIResponse', function(POIData) {
+		  var unorderedList = document.createElement('ul');
+		  var poiDiv = document.createElement('div');
+		  var poiHeader = document.createElement('h2');
+		  
+		  poiHeader.textContent = 'POI Data:';
+		  
+		  for(field in POIData) {
+			  var listItem = document.createElement('li');
+			  listItem.textContent = field.toString() + ": " + POIData[field].toString();
+			  
+			  unorderedList.appendChild(listItem);
+		  }
+		  
+		  poiDiv.appendChild(poiHeader);
+		  poiDiv.appendChild(unorderedList);
+		  document.body.appendChild(poiDiv);
+	  });
+	  
+	  socket.on('POIResponseAll', function(allPOIData) {
+		  var poiDataDiv = document.createElement('div');
+		  
+		  for(poi in allPOIData) {
+			  var poiData = allPOIData[poi];
+			  
+			  var poiDiv = document.createElement('div');
+			  poiDiv.className = 'poi_button';
+			  
+			  poiDiv.textContent = poiData.poiName;
+			  poiDiv.onclick = (function(pd) {
+				  return function() { 
+					  removeAllChildren(poiDataDiv); 
+					  poiDataDiv.appendChild(poiDataView(pd)); 
+				  }
+			  })(poiData);
+			  
+			  document.body.appendChild(poiDiv);
+		  }
+		  
+		  document.body.appendChild(poiDataDiv);
+	  });
+	  
+	  //socket.emit('POIRequest', {id : 1});
+	  socket.emit('POIRequestAll', {});
+	});
+	</script>
+	
+  </head>
+</html>

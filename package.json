@@ -1,0 +1,12 @@
+
+{
+  "name": "onlinegame1-webapi",
+  "description": "The web interface for the Online Game 1.",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "4.x",
+	"socket.io": "1.x",
+	"passport.socketio": "3.x",
+	"connect-sqlite3": "0.x"
+  }
+}

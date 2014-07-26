@@ -1,0 +1,33 @@
+
+body {
+	background-color: #000;
+	-webkit-user-select: none;
+	font-family: 'Helvetica', Verdana, sans-serif;
+	position: relative;
+}
+
+#poi_data_container, .poi_button {
+	display: inline-block;
+	
+	background-color: #fff;
+	border: 3px solid #999;
+	text-align: center;
+	margin: 10px 5px 10px 5px;
+	padding: 5px 2px 5px 2px;
+	border-radius: 10px;
+}
+
+.poi_button {
+	position: relative;
+	cursor: pointer;
+}
+
+.poi_button:hover {
+	background-color: #ddd;
+}
+
+.poi_button:active {
+	background-color: #aaa;
+	top: 2px;
+	right: 2px;
+}
