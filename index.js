@@ -43,7 +43,7 @@ io.on('connection', function(socket) {
 				soil : data[2],
 				stone : data[3],
 				wild : data[4],
-				poiName : data.toString('utf8', 5)
+				poiName : data.toString('utf8', 5),
 			};
 			
 			socket.emit('POIResponse', poiData);
@@ -53,6 +53,9 @@ io.on('connection', function(socket) {
 	socket.on('POIRequest', function(data) {
 		var dataConnection = openDataConnection();
 		dataConnection.on('data', poiResponse);
+		dataConnection.on('error', function() {
+			socket.emit('POIResponse', false);
+		});
 		
 		var id = data.id;
 		
@@ -81,8 +84,23 @@ io.on('connection', function(socket) {
 			var dataLengthByteSize = data[1];
 			var dataLength = 0;
 			
-			for(var i = 0; i < dataLengthByteSize; i++) {
-				dataLength += data[2 + i] * Math.pow(2, dataLengthByteSize - (dataLengthByteSize - i));
+			switch(dataLengthByteSize) {
+			case 1: {
+				dataLength = data.readUInt8(2);
+				break;
+			}
+			case 2: {
+				dataLength = data.readUInt16LE(2);
+				break;
+			}
+			case 4: {
+				dataLength = data.readUInt32LE(2);
+				break;
+			}
+			default: {
+				return false;
+				break;
+			}
 			}
 			
 			var responseReadIndex = 2 + dataLengthByteSize;
@@ -110,12 +128,26 @@ io.on('connection', function(socket) {
 			}
 			
 			socket.emit('POIResponseAll', allPOIData);
+			
+			return allPOIData;
 		}
 	}
 	
 	socket.on('POIRequestAll', function(request) {
 		var dataConnection = openDataConnection();
-		dataConnection.on('data', allPOIResponse);
+		dataConnection.on('data', function(data) {
+			console.log('REQUEST: All POI');
+			var responseData = allPOIResponse(data);
+			if(responseData) {
+				console.log('RESPONSE: Success!');
+			}
+			else {
+				console.log('RESPONSE: Error creating response');
+			}
+		});
+		dataConnection.on('error', function(){
+			socket.emit('POIResponseAll', false);
+		});
 		
 		var buffer = new Buffer(3);
 		buffer.writeUInt8(0x03, 0);
