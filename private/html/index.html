@@ -69,7 +69,11 @@
 			  poiDataContainer.id    = 'poi_data_container';
 			  poiDataContainer.textContent = "Error connecting to server.";
 			  document.body.appendChild(poiDataContainer);
+			  return;
 		  }
+		  
+		  console.log(allPOIData);
+		  
 		  var poiDataDiv = document.createElement('div');
 		  
 		  for(poi in allPOIData) {
