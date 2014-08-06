@@ -7,7 +7,9 @@
  */
 
 var net = require('net');
-var poiParser = require('./ModelParser/POIParser');
+var modelParser = require('./ModelParser/ModelParser');
+var dataInterface = require('./Interface/DataServerInterface');
+var poiParser = modelParser.poiParser;
 
 var openDataConnection = function() {
 	var dataConnection = net.createConnection('../GameDataServer/connection', function() {
@@ -30,6 +32,10 @@ module.exports = new function() {
 		return 0;
 	}
 	
+	this.disconnectUser = function () {
+		return false;
+	}
+	
 	this.getAllPOIs = function(doneCallback) {
 		var dataConnection = openDataConnection();
 		dataConnection.on('data', function(data) {
@@ -39,12 +45,8 @@ module.exports = new function() {
 			doneCallback(false);
 		});
 		
-		var buffer = new Buffer(3);
-		buffer.writeUInt8(0x03, 0);
-		buffer.writeUInt8(0x04, 1);
-		buffer.writeUInt8(0xff, 2);
-		
-		dataConnection.write(buffer);
+		var dataRequestBuffer = dataInterface.allPOIsBuffer();
+		dataConnection.write(dataRequestBuffer);
 	}
 	
 	this.getPOI = function(request, doneCallback) {
@@ -58,12 +60,7 @@ module.exports = new function() {
 		
 		var id = request.id;
 		
-		var buffer = new Buffer(4);
-		buffer.writeUInt8(0x03, 0);
-		buffer.writeUInt8(0x01, 1);
-		buffer.writeUInt8(id, 2);
-		buffer.writeUInt8(0xff, 3);
-		
-		dataConnection.write(buffer);
+		var dataRequestBuffer = dataInterface.poiBuffer(id);
+		dataConnection.write(dataRequestBuffer);
 	}
 }

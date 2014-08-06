@@ -8,6 +8,7 @@
  */
 
 var stringUtil = require('./../Utils/StringUtil');
+var dataUtil = require('./../Utils/DataUtil');
 
 module.exports = new function() {
 	this.parsePOIResponse = function(data) {
@@ -26,6 +27,8 @@ module.exports = new function() {
 		
 			return poiData;
 		}
+		
+		return false;
 	}
 
 	this.parseAllPOIResponse = function(data) {
@@ -34,24 +37,7 @@ module.exports = new function() {
 			var valSize = data[1];
 			var bufferReadFunction = 0;
 		
-			switch(valSize) {
-			case 1: {
-				bufferReadFunction = data.readUInt8.bind(data);
-				break;
-			}
-			case 2: {
-				bufferReadFunction = data.readUInt16LE.bind(data);
-				break;
-			}
-			case 4: {
-				bufferReadFunction = data.readUInt32LE.bind(data);
-				break;
-			}
-			default: {
-				return false;
-				break;
-			}
-			}
+			bufferReadFunction = dataUtil.getBufferReadFunction(valSize, data);
 		
 			var dataLength = bufferReadFunction(2);
 			var responseReadIndex = 2 + valSize;
