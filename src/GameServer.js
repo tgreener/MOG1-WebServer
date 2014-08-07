@@ -29,6 +29,8 @@ var openDataConnection = function() {
 
 module.exports = new function() {
 	this.connectUser = function() {
+		
+		
 		return 0;
 	}
 	
