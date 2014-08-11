@@ -19,7 +19,12 @@ app.get('/', function(req, res) {
 io.on('connection', function(socket) {
 	console.log('A user connected.');
 	
-	var userID = game.connectUser();
+	var userID = -1;
+	singleConnectionTaken = true;
+	
+	game.connectUser(function(id) {
+		if(id) userID = id;
+	});
 	
 	socket.on('POIRequest', function(request) {
 		game.getPOI(request, function(result){
@@ -34,6 +39,7 @@ io.on('connection', function(socket) {
 	});
 	
 	socket.on('disconnect', function() {
-		game.disconnectUser();
+		game.disconnectUser(1, function(){ /* This callback just doesn't even care atm. */ });
+		console.log('A user disconnected.');
 	});
 });
