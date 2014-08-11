@@ -15,6 +15,12 @@ module.exports = new function() {
 	this.poiParser = poiParser;
 	
 	this.getNewModelID = function(data) {
-		return data.readBufferUInt32LE(0);
+		if(data.readUInt8(0) > 0) {
+			return data.readUInt32LE(1);
+		}
+		else {
+			return false;
+		}
+		
 	}
 }

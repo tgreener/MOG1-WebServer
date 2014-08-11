@@ -14,12 +14,12 @@ module.exports = new function() {
 		var valSize = 4;
 		var readIndex = 0;
 		
-		if(data.bufferReadUInt32LE(readIndex) > 0) {
+		if(data.readUInt32LE(readIndex) > 0) {
 			readIndex += valSize;
 			
 			var UserData = {
-				id : data.readBufferUInt32LE(readIndex + (valSize * 0)),
-				locationID : data.readBufferUInt32LE(readIndex + (valSize * 1)),
+				id : data.readUInt32LE(readIndex + (valSize * 0)),
+				locationID : data.readUInt32LE(readIndex + (valSize * 1)),
 				tag : data.toString('utf8', readIndex + (valSize * 2))
 			}
 			

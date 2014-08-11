@@ -9,15 +9,17 @@
 var net = require('net');
 var modelParser = require('./ModelParser/ModelParser');
 var dataInterface = require('./Interface/DataServerInterface');
+var gameInterface = require('./Interface/GameServerInterface');
+var gameResponseParser = require('./GameResponseParser');
 var poiParser = modelParser.poiParser;
 
 var openDataConnection = function() {
 	var dataConnection = net.createConnection('../GameDataServer/connection', function() {
-		console.log('Connected to data server!');
+		// console.log('Connected to data server!');
 	});
 	
 	dataConnection.on('end', function() {
-		console.log('Connection to data server closed!');
+		// console.log('Connection to data server closed!');
 	});
 
 	dataConnection.on('error', function(err) {
@@ -28,14 +30,31 @@ var openDataConnection = function() {
 }
 
 module.exports = new function() {
-	this.connectUser = function() {
+	this.connectUser = function(callback) {
+		var connectedUserID = -1;
+		var dataConnection = openDataConnection();
+		dataConnection.on('data', function(data) {
+			callback(modelParser.getNewModelID(data));
+		});
+		dataConnection.on('error', function() {
+			callback(false);
+		}); 
 		
-		
-		return 0;
+		var connectUserBuffer = gameInterface.connectUserBuffer();
+		dataConnection.write(connectUserBuffer);
 	}
 	
-	this.disconnectUser = function () {
-		return false;
+	this.disconnectUser = function(id, callback) {
+		var dataConnection = openDataConnection();
+		dataConnection.on('data', function(data) {
+			callback(gameResponseParser.parseBoolResponse(data));
+		});
+		dataConnection.on('error', function() {
+			callback(false);
+		});
+		
+		var disconnectUserBuffer = gameInterface.disconnectUserBuffer(id);
+		dataConnection.write(disconnectUserBuffer);
 	}
 	
 	this.getAllPOIs = function(doneCallback) {
