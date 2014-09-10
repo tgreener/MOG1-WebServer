@@ -14,15 +14,15 @@ module.exports = new function() {
 		
 		switch(valSize) {
 		case 1: {
-			bufferReadFunction = data.readUInt8.bind(data);
+			bufferReadFunction = data.readUInt8;
 			break;
 		}
 		case 2: {
-			bufferReadFunction = data.readUInt16LE.bind(data);
+			bufferReadFunction = data.readUInt16LE;
 			break;
 		}
 		case 4: {
-			bufferReadFunction = data.readUInt32LE.bind(data);
+			bufferReadFunction = data.readUInt32LE;
 			break;
 		}
 		default: {

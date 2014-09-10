@@ -13,10 +13,10 @@
 		
 		poiDataTextSpan.textContent = poiData.poiName;
 		
-		if(poiData.soil > poiData.stone && poiData.soil > poiData.wilderness) {
+		if(poiData.soil > poiData.stone && poiData.soil > poiData.wild) {
 			poiDataTextSpan.textContent += ", a fertile plain.";
 		}
-		else if(poiData.stone > poiData.soil && poiData.stone > poiData.wilderness) {
+		else if(poiData.stone > poiData.soil && poiData.stone > poiData.wild) {
 			poiDataTextSpan.textContent += ", a land of craggy mountains.";
 		}
 		else {
@@ -37,67 +37,55 @@
 	$(function() {
 	  var socket = io('localhost:4010');
 	  
-	  socket.on('POIResponse', function(POIData) {
-		  if(!POIData.error) {
-  			var unorderedList = document.createElement('ul');
-  			var poiDiv = document.createElement('div');
-  			var poiHeader = document.createElement('h2');
-
-  			poiHeader.textContent = 'POI Data:';
-
-  			for(field in POIData) {
-  			  var listItem = document.createElement('li');
-  			  listItem.textContent = field.toString() + ": " + POIData[field].toString();
-
-  			  unorderedList.appendChild(listItem);
-  			}
-
-  			poiDiv.appendChild(poiHeader);
-  			poiDiv.appendChild(unorderedList);
-  			document.body.appendChild(poiDiv);
-		  }
-		  else {
-			  var errorMessage = document.createElement('p');
-			  p.textContent = 'Error in server connection';
-			  document.body.appendChild(errorMessage);
-		  }
-	  });
-	  
-	  socket.on('POIResponseAll', function(allPOIData) {
-		  if(!allPOIData) {
+	  socket.on('UserLocationResponse', function(locationData) {
+  		  removeAllChildren(document.body);
+		  if(!locationData) {
 			  var poiDataContainer = document.createElement('div');
 			  poiDataContainer.id    = 'poi_data_container';
-			  poiDataContainer.textContent = "Error connecting to server.";
+			  poiDataContainer.textContent = "Error getting location.";
 			  document.body.appendChild(poiDataContainer);
 			  return;
 		  }
 		  
-		  console.log(allPOIData);
+		  // console.log(locationData);
 		  
-		  var poiDataDiv = document.createElement('div');
-		  
-		  for(poi in allPOIData) {
-			  var poiData = allPOIData[poi];
-			  
-			  var poiDiv = document.createElement('div');
-			  poiDiv.className = 'poi_button';
-			  
-			  poiDiv.textContent = poiData.poiName;
-			  poiDiv.onclick = (function(pd) {
-				  return function() { 
-					  removeAllChildren(poiDataDiv); 
-					  poiDataDiv.appendChild(poiDataView(pd)); 
+		  var poiData = locationData.currentPOI;
+          var poiDataDiv = document.createElement('div');
+
+		  var poiDiv = document.createElement('div');
+		  poiDiv.className = 'poi_label';
+
+		  poiDiv.textContent = poiData.poiName;
+		  poiDataDiv.appendChild(poiDataView(poiData));
+
+		  document.body.appendChild(poiDiv);
+		  document.body.appendChild(poiDataDiv);
+
+		  var connectionData = locationData.connectionData;
+		  for(var i = 0; i < connectionData.length; i++) {
+			  // console.log(connectionData[i]);
+
+			  var connectionDiv = document.createElement('div');
+			  connectionDiv.className = 'poi_button';
+
+			  connectionDiv.textContent = connectionData[i].connectedPOIName;
+			  connectionDiv.onclick = (function(handle) {
+				  return function() {
+					  console.log(handle);
+					  socket.emit(handle, null);
 				  }
-			  })(poiData);
-			  
-			  document.body.appendChild(poiDiv);
+			  })(connectionData[i].eventHandle);
+
+			  document.body.appendChild(connectionDiv);
 		  }
 		  
-		  document.body.appendChild(poiDataDiv);
 	  });
 	  
-	  //socket.emit('POIRequest', {id : 1});
-	  socket.emit('POIRequestAll', {});
+	  socket.on('ConnectionResponse', function(success) {
+		if(success) {
+			socket.emit('UserLocationRequest', null);
+		}
+	  });
 	});
 	</script>
 	

@@ -19,24 +19,90 @@ app.get('/', function(req, res) {
 io.on('connection', function(socket) {
 	console.log('A user connected.');
 	
-	var userID = -1;
-	singleConnectionTaken = true;
+	var userData = {};
 	
 	game.connectUser(function(id) {
-		if(id) userID = id;
+		if(id) {
+			userData.id = id;
+			socket.emit('ConnectionResponse', true);
+		}
+		else {
+			socket.emit('ConnectionResponse', false);
+		}
 	});
 	
-	socket.on('POIRequest', function(request) {
-		game.getPOI(request, function(result){
-			socket.emit('POIResponse', result);
-		});
-	});
+	var createRouteInfoForClient = function(userLocation) {
+		var minimalConnectionData = [];
+		
+		for(var i = 0; i < userLocation.connectionInfo.length; i++) {
+			var connectionInfo = userLocation.connectionInfo[i];
+			minimalConnectionData[i] = new function() {
+				this.connectedPOIName = connectionInfo.connectedPOI.poiName;
+				this.eventHandle = this.connectedPOIName + String(connectionInfo.connectingRoute.id);
+			}
+		}
+		
+		return minimalConnectionData;
+	}
 	
-	socket.on('POIRequestAll', function(request) {
-		game.getAllPOIs(function(result) {
-			socket.emit('POIResponseAll', result);
-		});
-	});
+	var createRouteEventHandler = function(handle, connection) {
+		var runCount = 0;
+		return function handler(anotherRequest) 
+		{
+			game.moveToLocation(userData.id, connection.connectedPOI.locationID, function(userDidMove){
+				if(userDidMove) {
+					userLocationRequest(anotherRequest);
+				}
+			});
+		}
+	}
+	
+	var setRouteEventHandlers = function(userLocation, minimalConnectionData) {
+		var locationEventHandlers = [];
+		var locationEventHandles = [];
+		var numConnections = userLocation.connectionInfo.length;
+		
+		for(var i = 0; i < numConnections; i++) {
+			var connectionInfo = userLocation.connectionInfo[i];
+			
+			locationEventHandles[i] = minimalConnectionData[i].eventHandle;
+			
+			var routeHandler = createRouteEventHandler(locationEventHandles[i], connectionInfo);
+			locationEventHandlers[i] = (function(handler) {
+				return function(request) {
+					handler(request);
+				
+					for(var j = 0; j < numConnections; j++) {
+						socket.removeListener(locationEventHandles[j], locationEventHandlers[j]);
+					}
+				}
+			})(routeHandler)
+			
+			socket.on(locationEventHandles[i], locationEventHandlers[i]);
+		}
+	}
+	
+	var userLocationRequest = function(request) {
+		if(userData.id > 0) {
+			game.getLocation(userData.id, function(userLocation) {
+				if(userLocation) {
+					userData.currentLocation = userLocation;
+					
+					var minimalConnectionData = createRouteInfoForClient(userLocation);
+					setRouteEventHandlers(userLocation, minimalConnectionData);
+					
+					var minimalLocationData = {
+						currentPOI : userLocation.currentPOI,
+						connectionData : minimalConnectionData
+					}
+					
+					socket.emit('UserLocationResponse', minimalLocationData);
+				}
+			});
+		}
+	}
+	
+	socket.on('UserLocationRequest', userLocationRequest);
 	
 	socket.on('disconnect', function() {
 		game.disconnectUser(1, function(){ /* This callback just doesn't even care atm. */ });

@@ -24,12 +24,88 @@ var openDataConnection = function() {
 
 	dataConnection.on('error', function(err) {
 		console.log('Error in data connection!');
+		console.log(err);
 	});
 	
 	return dataConnection;
 }
 
+var errorResponse = function(doneCallback) {
+		return function() {
+			doneCallback(false);
+		}
+}
+
+var outgoingConnectionsResponse = function(currentPOI) {
+	return function(data) {
+		var routesInfo = gameResponseParser.parseRoutesWithEndpointsResponse(data);
+		var connectedPOIs = routesInfo.pois;
+		var routesOut = routesInfo.routes;
+	
+		var connectionInfo = [];
+	
+		for(var i = 0; i < connectedPOIs.length; i++) {
+			connectionInfo[i] = {
+				connectedPOI : connectedPOIs[i],
+				connectingRoute : routesOut[i]
+			}
+		}
+	
+		var result = {
+			currentPOI : currentPOI,
+			connectionInfo : connectionInfo
+		}
+	
+		return result;
+	}
+}
+
+var outgoingConnectionsRequest = function(id, doneCallback, currentPOI) {
+	return function() {
+		var secondConnection = openDataConnection();
+
+		secondConnection.on('data', function(data){
+			var result = (outgoingConnectionsResponse(currentPOI))(data);
+			doneCallback(result);
+		});
+		secondConnection.on('error', errorResponse(doneCallback));
+
+		var poisFromPlayerBuffer = gameInterface.poisFromPlayerBuffer(id);
+		secondConnection.write(poisFromPlayerBuffer);
+	}
+}
+
 module.exports = new function() {
+	this.getLocation = function(id, doneCallback) {
+		var dataConnection = openDataConnection();
+		var currentPOI;
+		
+		dataConnection.on('data', function(data) {
+			currentPOI = gameResponseParser.parseUserLocationResponse(data);
+		});
+		dataConnection.on('error', errorResponse(doneCallback));
+		
+		dataConnection.on('end', function(){
+			(outgoingConnectionsRequest(id, doneCallback, currentPOI))();
+		});
+		
+		var userLocationBuffer = gameInterface.userLocationBuffer(id);
+		dataConnection.write(userLocationBuffer);
+	}
+	
+	this.moveToLocation = function(userID, locationID, callback) {
+		// console.log(locationID);
+		var dataConnection = openDataConnection();
+		
+		dataConnection.on('data', function(data) {
+			callback(gameResponseParser.parseBoolResponse(data));
+		});
+		dataConnection.on('error', errorResponse(callback));
+		
+		var moveUserBuffer = gameInterface.moveUserBuffer(userID, locationID);
+		dataConnection.write(moveUserBuffer);
+	}
+	
 	this.connectUser = function(callback) {
 		var connectedUserID = -1;
 		var dataConnection = openDataConnection();
@@ -83,5 +159,5 @@ module.exports = new function() {
 		
 		var dataRequestBuffer = dataInterface.poiBuffer(id);
 		dataConnection.write(dataRequestBuffer);
-	}
+	}	
 }

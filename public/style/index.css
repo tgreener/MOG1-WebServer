@@ -6,7 +6,7 @@ body {
 	position: relative;
 }
 
-#poi_data_container, .poi_button {
+#poi_data_container, .poi_button, .poi_label {
 	display: inline-block;
 	
 	background-color: #fff;

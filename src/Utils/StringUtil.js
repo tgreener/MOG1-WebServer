@@ -8,6 +8,11 @@
  */
 
 module.exports = new function() { 
+	this.stringFromBuffer = function(buffer, startIndex) {
+		var endIndex = this.findNullTerminator(buffer, startIndex);
+		return buffer.toString('utf8', startIndex, endIndex);
+	}
+	
 	this.findNullTerminator = function(buffer, offset) {
 		var index = offset;
 		while(index < buffer.length) {

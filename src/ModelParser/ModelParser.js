@@ -9,10 +9,12 @@
 
 var userParser = require('./UserParser');
 var poiParser = require('./POIParser');
+var routeParser = require('./RouteParser');
 
 module.exports = new function() {
 	this.userParser = userParser;
 	this.poiParser = poiParser;
+	this.routeParser = routeParser;
 	
 	this.getNewModelID = function(data) {
 		if(data.readUInt8(0) > 0) {
